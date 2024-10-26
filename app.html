@@ -142,6 +142,12 @@
             'Danit': ['morningNames', 'eveningNames'],
         };
 
+        const namesInShift = {
+            morningNames: 2,
+            eveningNames: 2,
+            nightNames: 1,
+        }
+
         let iterationCount = 0;
 
         // Object to store the shift count for each name
@@ -461,6 +467,7 @@
             const solution = [];
 
             const solutionsData = [];
+            let previousNight = [];
 
             upcomingDates.forEach(date => {
 
@@ -471,15 +478,10 @@
                 const dateCell = document.createElement('td');
                 dateCell.textContent = formatDate(date);
 
-                // Track names used in the previous shift
-                let previousMorning = [];
-                let previousEvening = [];
-                let previousNight = null;
-
                 // Assign names for morning shift (2 names)
                 const morningNames = [];
-                for (let i = 0; i < 2; i++) {
-                    const name = getRandomName([...morningNames, ...previousMorning, previousNight, ...getExcludedNames(date)]);
+                for (let i = 0; i < namesInShift.morningNames; i++) {
+                    const name = getRandomName([...morningNames, ...previousNight, ...getExcludedNames(date)]);
                     morningNames.push(name);
                     shiftCount[name] = (shiftCount[name] || 0) + 1; // Increment shift count for the name
                     dayWorkCount[name] = true;
@@ -488,20 +490,26 @@
 
                 // Assign names for evening shift (2 names)
                 const eveningNames = [];
-                for (let i = 0; i < 2; i++) {
-                    const name = getRandomName([...eveningNames, ...morningNames, previousNight, ...getExcludedNames(date)]);
+                for (let i = 0; i < namesInShift.eveningNames; i++) {
+                    const name = getRandomName([...eveningNames, ...morningNames, ...getExcludedNames(date)]);
                     eveningNames.push(name);
                     shiftCount[name] = (shiftCount[name] || 0) + 1; // Increment shift count for the name
                     dayWorkCount[name] = true;
                 }
                 solutionDayData.eveningNames = eveningNames;
 
-                // Assign name for night shift (1 name)
-                const nightName = getRandomName([...morningNames, ...eveningNames, ...getExcludedNames(date)]);
-                previousNight = nightName;
-                shiftCount[nightName] = (shiftCount[nightName] || 0) + 1; // Increment shift count for the night name
-                dayWorkCount[nightName] = true;
-                solutionDayData.nightNames = [nightName];
+
+                ////
+
+                const nightNames = [];
+                for (let i = 0; i < namesInShift.nightNames; i++) {
+                    const name = getRandomName([...eveningNames, ...nightNames, ...getExcludedNames(date)]);
+                    nightNames.push(name);
+                    shiftCount[name] = (shiftCount[name] || 0) + 1; // Increment shift count for the name
+                    dayWorkCount[name] = true;
+                }
+                solutionDayData.nightNames = nightNames;
+                previousNight = nightNames;
 
                 // Create cells for the shifts
                 const morningCell = document.createElement('td');
@@ -511,7 +519,7 @@
                 eveningCell.textContent = eveningNames.join(', '); // Join the names for display
 
                 const nightCell = document.createElement('td');
-                nightCell.textContent = nightName; // Single name for night shift
+                nightCell.textContent = nightNames.join(', '); // Join the names for display
 
 
 
