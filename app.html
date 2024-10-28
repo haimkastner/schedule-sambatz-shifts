@@ -115,10 +115,11 @@
     </div>
 
     <script>
-        const nextDays = 7;
-
+        const nextDays = 5;
+        const startingDate = new Date('2024-10-30');
+        // const startingDate = new Date();
         // Array of names to be randomly assigned
-        const names = ['Haim', 'Nicolas', 'Elad', 'Avia', 'Danit', 'Ayala', 'Aviad', 'Ami'];
+        const names = ['Haim', 'Nicolas', 'Elad', 'Avia', 'Danit', 'Ayala', 'Aviad', 'Ami', 'Hila'];
 
         function formatDate(date) {
             const day = String(date.getDate()).padStart(2, '0'); // Get day and pad with zero if needed
@@ -130,21 +131,28 @@
 
         // Object to store exclusions (name and their corresponding excluded dates) name:Date day format
         const exclusions = {
-            'Haim': [formatDate(new Date('2024-10-23')), formatDate(new Date('2024-10-24'))],
-            'Avia': [formatDate(new Date('2024-10-23')), formatDate(new Date('2024-10-24'))],
-            'Nicolas': [formatDate(new Date('2024-10-27'))],
-            'Ayala': [formatDate(new Date('2024-10-28'))],
-            'Aviad': [formatDate(new Date('2024-10-29'))],
+            'Aviad': [formatDate(new Date('2024-10-30'))],
+            'Elad': [formatDate(new Date('2024-11-4')), formatDate(new Date('2024-11-5'))],
+            'Danit': [formatDate(new Date('2024-10-31')), formatDate(new Date('2024-11-1')), formatDate(new Date('2024-11-8'))],
+            'Hila': [formatDate(new Date('2024-11-3'))],
+            'Haim': [formatDate(new Date('2024-11-8'))],
+            'Ayala': [formatDate(new Date('2024-11-1')), formatDate(new Date('2024-11-2')), formatDate(new Date('2024-11-3')), formatDate(new Date('2024-11-4')), formatDate(new Date('2024-11-8')) , formatDate(new Date('2024-11-9')) , formatDate(new Date('2024-11-10'))],
         };
 
         const desiredShifts = {
-            // 'Ayala': ['nightNames'],
+            'Haim': ['nightNames'],
             'Danit': ['morningNames', 'eveningNames'],
         };
 
         const namesInShift = {
-            morningNames: 2,
-            eveningNames: 2,
+            morningNames: {
+                [formatDate(new Date('2024-10-30'))] : 1,
+                [formatDate(new Date('2024-10-31'))] : 2,
+            },
+            eveningNames: {
+                [formatDate(new Date('2024-10-30'))] : 1,
+                [formatDate(new Date('2024-10-31'))] : 2,
+            },
             nightNames: 1,
         }
 
@@ -442,16 +450,33 @@
 
         // Function to get the date for the next N days
         function getUpcomingDates(numDays) {
-            const today = new Date();
             const dates = [];
 
             for (let i = 0; i < numDays; i++) {
                 const nextDate = new Date();
-                nextDate.setDate(today.getDate() + i); // Set the date to upcoming day
+                nextDate.setDate(startingDate.getDate() + i); // Set the date to upcoming day
                 dates.push(nextDate); // Push the date as a string in the format "MM/DD/YYYY"
             }
 
             return dates;
+        }
+
+        function getShiftAmount(shiftDate, shiftNamesObject) {
+
+            if (typeof shiftNamesObject === "number"){
+                return shiftNamesObject;
+            }
+
+            let finalAmount = shiftNamesObject[Object.keys(shiftNamesObject)[0]];
+
+            for (const [formatDate, amount] of Object.entries(shiftNamesObject)) {
+                const date = new Date(formatDate.split('/').reverse().join('-'));
+                if (shiftDate.getTime() >= date.getTime()) {
+                    finalAmount = amount;
+                }
+            }
+
+            return finalAmount;
         }
 
         // Function to fill the table with random names based on the new shift requirements
@@ -480,7 +505,7 @@
 
                 // Assign names for morning shift (2 names)
                 const morningNames = [];
-                for (let i = 0; i < namesInShift.morningNames; i++) {
+                for (let i = 0; i < getShiftAmount(date, namesInShift.morningNames); i++) {
                     const name = getRandomName([...morningNames, ...previousNight, ...getExcludedNames(date)]);
                     morningNames.push(name);
                     shiftCount[name] = (shiftCount[name] || 0) + 1; // Increment shift count for the name
@@ -490,7 +515,7 @@
 
                 // Assign names for evening shift (2 names)
                 const eveningNames = [];
-                for (let i = 0; i < namesInShift.eveningNames; i++) {
+                for (let i = 0; i < getShiftAmount(date, namesInShift.eveningNames); i++) {
                     const name = getRandomName([...eveningNames, ...morningNames, ...getExcludedNames(date)]);
                     eveningNames.push(name);
                     shiftCount[name] = (shiftCount[name] || 0) + 1; // Increment shift count for the name
@@ -502,8 +527,8 @@
                 ////
 
                 const nightNames = [];
-                for (let i = 0; i < namesInShift.nightNames; i++) {
-                    const name = getRandomName([...eveningNames, ...nightNames, ...getExcludedNames(date)]);
+                for (let i = 0; i < getShiftAmount(date, namesInShift.nightNames); i++) {
+                    const name = getRandomName([...(!namesInShift.eveningNames.length ? morningNames : []), ...eveningNames, ...nightNames, ...getExcludedNames(date)]);
                     nightNames.push(name);
                     shiftCount[name] = (shiftCount[name] || 0) + 1; // Increment shift count for the name
                     dayWorkCount[name] = true;
@@ -561,7 +586,7 @@
             solutionScore.textContent = score.toLocaleString();
 
             const daysAmount = document.querySelector('#daysAmount');
-            daysAmount.textContent = nextDays.toString();
+            daysAmount.textContent = ` ${nextDays.toString()} (Starting ${formatDate(startingDate)}) `;
 
             renderStatistics(solutionsData);
             solutions.push({
