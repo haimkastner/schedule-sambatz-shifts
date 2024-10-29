@@ -121,22 +121,14 @@
         // Array of names to be randomly assigned
         const names = ['Haim', 'Nicolas', 'Elad', 'Avia', 'Danit', 'Ayala', 'Aviad', 'Ami', 'Hila'];
 
-        function formatDate(date) {
-            const day = String(date.getDate()).padStart(2, '0'); // Get day and pad with zero if needed
-            const month = String(date.getMonth() + 1).padStart(2, '0'); // Get month (0-based) and pad
-            const year = date.getFullYear(); // Get full year
-
-            return `${day}/${month}/${year}`; // Format as DD/MM/YYYY
-        }
-
         // Object to store exclusions (name and their corresponding excluded dates) name:Date day format
         const exclusions = {
-            'Aviad': [formatDate(new Date('2024-10-30'))],
-            'Elad': [formatDate(new Date('2024-11-4')), formatDate(new Date('2024-11-5'))],
-            'Danit': [formatDate(new Date('2024-10-31')), formatDate(new Date('2024-11-1')), formatDate(new Date('2024-11-8'))],
-            'Hila': [formatDate(new Date('2024-11-3'))],
-            'Haim': [formatDate(new Date('2024-11-8'))],
-            'Ayala': [formatDate(new Date('2024-11-1')), formatDate(new Date('2024-11-2')), formatDate(new Date('2024-11-3')), formatDate(new Date('2024-11-4')), formatDate(new Date('2024-11-8')) , formatDate(new Date('2024-11-9')) , formatDate(new Date('2024-11-10'))],
+            'Aviad': ['30/10/2024'],
+            'Elad': ['4/11/2024', '5/11/2024'],
+            'Danit': ['31/10/2024', '1/11/2024', '8/11/2024'],
+            'Hila': ['3/11/2024'],
+            'Haim': ['8/11/2024'],
+            'Ayala': ['1/11/2024', '2/11/2024', '3/11/2024', '4/11/2024', '7/11/2024' , '8/11/2024' , '9/11/2024' , '1/11/20240'],
         };
 
         const desiredShifts = {
@@ -146,12 +138,12 @@
 
         const namesInShift = {
             morningNames: {
-                [formatDate(new Date('2024-10-30'))] : 1,
-                [formatDate(new Date('2024-10-31'))] : 2,
+                ['30/10/2024'] : 1,
+                ['31/10/2024'] : 2,
             },
             eveningNames: {
-                [formatDate(new Date('2024-10-30'))] : 1,
-                [formatDate(new Date('2024-10-31'))] : 2,
+                ['30/10/2024'] : 1,
+                ['31/10/2024'] : 2,
             },
             nightNames: 1,
         }
@@ -169,6 +161,13 @@
         const keepSolutions = 15;
         // score,solution.
         let solutions = [];
+
+        function formatDate(date) {
+            const day = String(date.getDate()).padStart(2, '0'); // Get day and pad with zero if needed
+            const month = String(date.getMonth() + 1).padStart(2, '0'); // Get month (0-based) and pad
+            const year = date.getFullYear(); // Get full year
+            return `${day}/${month}/${year}`; // Format as DD/MM/YYYY
+        }
 
         function countUndesiredShifts(shifts) {
             // Create a results object to store counts for each person
