@@ -115,20 +115,30 @@
     </div>
 
     <script>
-        const nextDays = 5;
-        const startingDate = new Date('2024-10-30');
+        const nextDays = 6;
+        const startingDate = new Date('2024-11-6');
         // const startingDate = new Date();
         // Array of names to be randomly assigned
-        const names = ['Haim', 'Nicolas', 'Elad', 'Avia', 'Danit', 'Ayala', 'Aviad', 'Ami', 'Hila'];
+        const names = ['Haim', 'Elad', 'Avia', 'Danit', 'Aviad', 'Ami', 'Hila'];
 
         // Object to store exclusions (name and their corresponding excluded dates) name:Date day format
         const exclusions = {
-            'Aviad': ['30/10/2024'],
-            'Elad': ['4/11/2024', '5/11/2024'],
-            'Danit': ['31/10/2024', '1/11/2024', '8/11/2024'],
-            'Hila': ['3/11/2024'],
-            'Haim': ['8/11/2024'],
-            'Ayala': ['1/11/2024', '2/11/2024', '3/11/2024', '4/11/2024', '7/11/2024' , '8/11/2024' , '9/11/2024' , '1/11/20240'],
+            'Danit': {
+                '07/11/2024': ['morningNames', 'eveningNames'],
+                '08/11/2024': [],
+                '09/11/2024': [],
+                '10/11/2024': ['morningNames'],
+                '11/11/2024': ['morningNames'],
+            },
+            'Haim': {
+                '07/11/2024': ['morningNames', 'eveningNames'],
+            },
+            'Ami': {
+                '10/11/2024': ['eveningNames', 'nightNames'],
+                '11/11/2024': [],
+                '12/11/2024': [],
+                '13/11/2024': ['morningNames'],
+            },
         };
 
         const desiredShifts = {
@@ -138,11 +148,9 @@
 
         const namesInShift = {
             morningNames: {
-                ['30/10/2024'] : 1,
                 ['31/10/2024'] : 2,
             },
             eveningNames: {
-                ['30/10/2024'] : 1,
                 ['31/10/2024'] : 2,
             },
             nightNames: 1,
@@ -505,7 +513,7 @@
                 // Assign names for morning shift (2 names)
                 const morningNames = [];
                 for (let i = 0; i < getShiftAmount(date, namesInShift.morningNames); i++) {
-                    const name = getRandomName([...morningNames, ...previousNight, ...getExcludedNames(date)]);
+                    const name = getRandomName([...morningNames, ...previousNight, ...getExcludedNames(date, morningNames)]);
                     morningNames.push(name);
                     shiftCount[name] = (shiftCount[name] || 0) + 1; // Increment shift count for the name
                     dayWorkCount[name] = true;
@@ -515,7 +523,7 @@
                 // Assign names for evening shift (2 names)
                 const eveningNames = [];
                 for (let i = 0; i < getShiftAmount(date, namesInShift.eveningNames); i++) {
-                    const name = getRandomName([...eveningNames, ...morningNames, ...getExcludedNames(date)]);
+                    const name = getRandomName([...eveningNames, ...morningNames, ...getExcludedNames(date, eveningNames)]);
                     eveningNames.push(name);
                     shiftCount[name] = (shiftCount[name] || 0) + 1; // Increment shift count for the name
                     dayWorkCount[name] = true;
@@ -527,7 +535,7 @@
 
                 const nightNames = [];
                 for (let i = 0; i < getShiftAmount(date, namesInShift.nightNames); i++) {
-                    const name = getRandomName([...(!namesInShift.eveningNames.length ? morningNames : []), ...eveningNames, ...nightNames, ...getExcludedNames(date)]);
+                    const name = getRandomName([...(!namesInShift.eveningNames.length ? morningNames : []), ...eveningNames, ...nightNames, ...getExcludedNames(date, nightNames)]);
                     nightNames.push(name);
                     shiftCount[name] = (shiftCount[name] || 0) + 1; // Increment shift count for the name
                     dayWorkCount[name] = true;
@@ -679,10 +687,19 @@
         }
 
         // Function to get excluded names for a specific date
-        function getExcludedNames(date) {
+        function getExcludedNames(date, shift) {
             const formattedDate = formatDate(new Date(date));
             return Object.keys(exclusions)
-                .filter(name => exclusions[name].includes(formattedDate));
+                .filter((name) =>  {
+                    const exclusion = exclusions?.[name]?.[formattedDate];
+                    if (!exclusion) {
+                        return false;
+                    }
+                    if (exclusion.length === 0) {
+                        return true;
+                    }
+                    return exclusion.includes(shift);
+                });
         }
 
         // Function to display the list of names and their shift counts
@@ -704,7 +721,14 @@
 
             for (const name in exclusions) {
                 const li = document.createElement('li');
-                li.textContent = `${name}: ${exclusions[name].join(', ')}`; // Display name and their excluded dates
+
+                let final = '';
+                for (const [date, excludes] of Object.entries(exclusions[name])) {
+                    final += `<br> ${date} ${excludes.map(ex => ex.split('Names')[0]).join(', ')}`
+                }
+
+
+                li.innerHTML = `<b>${name}:</b> ${final}`; // Display name and their excluded dates
                 exclusionList.appendChild(li);
             }
         }
