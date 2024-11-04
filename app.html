@@ -115,7 +115,7 @@
     </div>
 
     <script>
-        const nextDays = 6;
+        const nextDays = 8;
         const startingDate = new Date('2024-11-6');
         // const startingDate = new Date();
         // Array of names to be randomly assigned
@@ -123,14 +123,24 @@
 
         // Object to store exclusions (name and their corresponding excluded dates) name:Date day format
         const exclusions = {
+            'Aviad': {
+                // '07/11/2024': [],
+                // '08/11/2024': [],
+                // '09/11/2024': [],
+            },
             'Danit': {
-                '07/11/2024': ['morningNames', 'eveningNames'],
+                '07/11/2024': [],
                 '08/11/2024': [],
                 '09/11/2024': [],
-                '10/11/2024': ['morningNames'],
-                '11/11/2024': ['morningNames'],
+            },
+            'Hila': {
+                '07/11/2024': [],
+                '08/11/2024': [],
+                '09/11/2024': [],
+                '10/11/2024': ['morningNames', 'eveningNames'],
             },
             'Haim': {
+                '06/11/2024': ['morningNames', 'eveningNames'],
                 '07/11/2024': ['morningNames', 'eveningNames'],
             },
             'Ami': {
@@ -513,7 +523,7 @@
                 // Assign names for morning shift (2 names)
                 const morningNames = [];
                 for (let i = 0; i < getShiftAmount(date, namesInShift.morningNames); i++) {
-                    const name = getRandomName([...morningNames, ...previousNight, ...getExcludedNames(date, morningNames)]);
+                    const name = getRandomName([...morningNames, ...previousNight, ...getExcludedNames(date, 'morningNames')]);
                     morningNames.push(name);
                     shiftCount[name] = (shiftCount[name] || 0) + 1; // Increment shift count for the name
                     dayWorkCount[name] = true;
@@ -523,7 +533,7 @@
                 // Assign names for evening shift (2 names)
                 const eveningNames = [];
                 for (let i = 0; i < getShiftAmount(date, namesInShift.eveningNames); i++) {
-                    const name = getRandomName([...eveningNames, ...morningNames, ...getExcludedNames(date, eveningNames)]);
+                    const name = getRandomName([...eveningNames, ...morningNames, ...getExcludedNames(date, 'eveningNames')]);
                     eveningNames.push(name);
                     shiftCount[name] = (shiftCount[name] || 0) + 1; // Increment shift count for the name
                     dayWorkCount[name] = true;
@@ -535,7 +545,7 @@
 
                 const nightNames = [];
                 for (let i = 0; i < getShiftAmount(date, namesInShift.nightNames); i++) {
-                    const name = getRandomName([...(!namesInShift.eveningNames.length ? morningNames : []), ...eveningNames, ...nightNames, ...getExcludedNames(date, nightNames)]);
+                    const name = getRandomName([...(!namesInShift.eveningNames.length ? morningNames : []), ...eveningNames, ...nightNames, ...getExcludedNames(date, 'nightNames')]);
                     nightNames.push(name);
                     shiftCount[name] = (shiftCount[name] || 0) + 1; // Increment shift count for the name
                     dayWorkCount[name] = true;
