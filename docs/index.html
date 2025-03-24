@@ -102,6 +102,14 @@
             background-color: #0b7dda;
         }
 
+        button#exportCsvBtn {
+            background-color: #ff9800;
+        }
+
+        button#exportCsvBtn:hover {
+            background-color: #e68a00;
+        }
+
         input, select {
             padding: 8px;
             margin: 5px 0;
@@ -232,6 +240,7 @@
             <div class="button-panel">
                 <button id="recalculateButton">Run</button>
                 <button id="stopButton">Stop</button>
+                <button id="exportCsvBtn">Export to CSV</button>
             </div>
 
             <div id="errorContainer" class="error-message"></div>
@@ -908,6 +917,70 @@
             return `${day}/${month}/${year}`; // Format as DD/MM/YYYY
         }
 
+        // CSV Export Functions
+        function exportTableToCSV() {
+            if (names.length === 0) {
+                showErrorMessage("Please generate a schedule before exporting to CSV.");
+                return;
+            }
+
+            const table = document.getElementById('scheduleTable');
+            const rows = table.querySelectorAll('tr');
+            
+            let csvContent = "data:text/csv;charset=utf-8,";
+            
+            // Extract headers
+            const headers = [];
+            const headerRow = rows[0];
+            headerRow.querySelectorAll('th').forEach(th => {
+                headers.push(th.textContent);
+            });
+            csvContent += headers.join(',') + '\r\n';
+            
+            // Extract data rows
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                const cols = row.querySelectorAll('td');
+                
+                const rowData = [];
+                cols.forEach(col => {
+                    // Escape quotes in content and wrap with quotes to handle commas in content
+                    let content = col.textContent.replace(/"/g, '""');
+                    rowData.push(`"${content}"`);
+                });
+                
+                csvContent += rowData.join(',') + '\r\n';
+            }
+            
+            // Create download link
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            
+            // Create filename with current date
+            const today = new Date();
+            const filename = `schedule_${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}.csv`;
+            
+            link.setAttribute('download', filename);
+            document.body.appendChild(link);
+            
+            // Trigger download
+            link.click();
+            
+            // Remove link element
+            document.body.removeChild(link);
+            
+            // Show status message
+            const statusMessage = document.getElementById('statusMessage');
+            statusMessage.textContent = "CSV exported successfully";
+            statusMessage.classList.add('show');
+            
+            setTimeout(() => {
+                statusMessage.classList.remove('show');
+                statusMessage.textContent = "Settings saved";
+            }, 1500);
+        }
+
         // Display and clear error messages
         function showErrorMessage(message) {
             const errorContainer = document.getElementById('errorContainer');
@@ -1541,6 +1614,7 @@
         // Event handlers for the UI components
         document.getElementById('recalculateButton').addEventListener('click', runGens);
         document.getElementById('stopButton').addEventListener('click', stopMutations);
+        document.getElementById('exportCsvBtn').addEventListener('click', exportTableToCSV);
         document.getElementById('addPersonBtn').addEventListener('click', addPerson);
         document.getElementById('addExclusionBtn').addEventListener('click', addExclusion);
         document.getElementById('addPreferenceBtn').addEventListener('click', addPreference);
