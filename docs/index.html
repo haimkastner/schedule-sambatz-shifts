@@ -1,0 +1,1600 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schedule App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .left-panel {
+            flex: 3;
+            min-width: 600px;
+        }
+
+        .right-panel {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .stats-panel {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .config-panel {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        .config-section {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid black;
+            text-align: center;
+        }
+
+        .name-list, .stats-list {
+            margin-left: 20px;
+        }
+
+        .exclusion-form {
+            margin-bottom: 20px;
+        }
+
+        .button-panel {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        button {
+            padding: 8px 15px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        button#stopButton {
+            background-color: #f44336;
+        }
+
+        button#stopButton:hover {
+            background-color: #d32f2f;
+        }
+
+        button.secondary {
+            background-color: #2196F3;
+        }
+
+        button.secondary:hover {
+            background-color: #0b7dda;
+        }
+
+        input, select {
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .form-row {
+            display: flex;
+            margin-bottom: 10px;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-row label {
+            width: 120px;
+            flex-shrink: 0;
+        }
+
+        .form-row input, .form-row select {
+            flex-grow: 1;
+        }
+
+        .config-tab {
+            overflow: hidden;
+            border: 1px solid #ccc;
+            background-color: #f1f1f1;
+            margin-bottom: 15px;
+        }
+
+        .config-tab button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 10px 15px;
+            transition: 0.3s;
+            color: black;
+        }
+
+        .config-tab button:hover {
+            background-color: #ddd;
+        }
+
+        .config-tab button.active {
+            background-color: #ccc;
+        }
+
+        .tabcontent {
+            display: none;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-top: none;
+        }
+
+        .show {
+            display: block;
+        }
+        
+        ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        
+        li {
+            margin-bottom: 8px;
+            padding: 5px;
+            background-color: #f5f5f5;
+            border-radius: 3px;
+        }
+        
+        .shift-count-container {
+            display: flex;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+        
+        .shift-count-container label {
+            min-width: 100px;
+        }
+        
+        .shift-count-container input {
+            width: 60px;
+        }
+        
+        .shift-date-entry {
+            display: flex;
+            margin-bottom: 5px;
+            gap: 5px;
+            align-items: center;
+        }
+        
+        .shift-date-entry button {
+            padding: 3px 8px;
+        }
+        
+        .status-message {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            background-color: rgba(0, 128, 0, 0.8);
+            color: white;
+            border-radius: 5px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .status-message.show {
+            opacity: 1;
+        }
+
+        .error-message {
+            color: #d32f2f;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="left-panel">
+            <h2>Random Schedule for Next <span id="daysAmount"></span> Days</h2>
+
+            <div class="button-panel">
+                <button id="recalculateButton">Run</button>
+                <button id="stopButton">Stop</button>
+            </div>
+
+            <div id="errorContainer" class="error-message"></div>
+
+            <table id="scheduleTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Morning</th>
+                        <th>Evening</th>
+                        <th>Night</th>
+                        <th>Day Off</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Rows will be generated by JavaScript -->
+                </tbody>
+            </table>
+
+            <h4>Iteration <span id="iterationCounter">0</span> Score <span id="solutionScore">0</span></h4>
+        </div>
+
+        <div class="right-panel">
+            <!-- Configuration Controls -->
+            <div class="config-tab">
+                <button class="tablinks active" onclick="openConfigTab(event, 'generalConfig')">General</button>
+                <button class="tablinks" onclick="openConfigTab(event, 'peopleConfig')">Team Members</button>
+                <button class="tablinks" onclick="openConfigTab(event, 'shiftsConfig')">Shift Settings</button>
+                <button class="tablinks" onclick="openConfigTab(event, 'exclusionsConfig')">Exclusions</button>
+                <button class="tablinks" onclick="openConfigTab(event, 'preferencesConfig')">Preferences</button>
+            </div>
+
+            <div id="generalConfig" class="tabcontent show">
+                <h3>General Settings</h3>
+                <div class="form-row">
+                    <label for="startDateInput">Start Date:</label>
+                    <input type="date" id="startDateInput" onchange="updateGeneralSettings()">
+                </div>
+                <div class="form-row">
+                    <label for="daysToSchedule">Days to Schedule:</label>
+                    <input type="number" id="daysToSchedule" min="1" max="60" value="7" onchange="updateGeneralSettings()">
+                </div>
+            </div>
+
+            <div id="peopleConfig" class="tabcontent">
+                <h3>Team Members</h3>
+                <div class="form-row">
+                    <input type="text" id="newPersonName" placeholder="Enter name">
+                    <button id="addPersonBtn" class="secondary">Add</button>
+                </div>
+                <ul id="teamMembersList">
+                    <!-- List items will be generated by JavaScript -->
+                </ul>
+            </div>
+
+            <div id="shiftsConfig" class="tabcontent">
+                <h3>Shift Settings</h3>
+                <div class="shift-count-container">
+                    <label>Morning Shift:</label>
+                    <input type="number" id="morningShiftCount" min="1" max="10" value="2" onchange="updateShiftCounts()">
+                    <button id="addMorningDateBtn" class="secondary">+ Date Exception</button>
+                </div>
+                <div id="morningShiftDateExceptions">
+                    <!-- Date exceptions will be added here -->
+                </div>
+                
+                <div class="shift-count-container">
+                    <label>Evening Shift:</label>
+                    <input type="number" id="eveningShiftCount" min="1" max="10" value="2" onchange="updateShiftCounts()">
+                    <button id="addEveningDateBtn" class="secondary">+ Date Exception</button>
+                </div>
+                <div id="eveningShiftDateExceptions">
+                    <!-- Date exceptions will be added here -->
+                </div>
+                
+                <div class="shift-count-container">
+                    <label>Night Shift:</label>
+                    <input type="number" id="nightShiftCount" min="1" max="10" value="1" onchange="updateShiftCounts()">
+                    <button id="addNightDateBtn" class="secondary">+ Date Exception</button>
+                </div>
+                <div id="nightShiftDateExceptions">
+                    <!-- Date exceptions will be added here -->
+                </div>
+            </div>
+
+            <div id="exclusionsConfig" class="tabcontent">
+                <h3>Exclusions</h3>
+                <div class="form-row">
+                    <label for="exclusionPerson">Person:</label>
+                    <select id="exclusionPerson">
+                        <!-- Options will be generated by JavaScript -->
+                    </select>
+                </div>
+                <div class="form-row">
+                    <label for="exclusionDate">Date:</label>
+                    <input type="date" id="exclusionDate">
+                </div>
+                <div class="form-row">
+                    <label>Shifts to exclude:</label>
+                    <div>
+                        <input type="checkbox" id="excludeMorning" value="morningNames">
+                        <label for="excludeMorning">Morning</label>
+                        <input type="checkbox" id="excludeEvening" value="eveningNames">
+                        <label for="excludeEvening">Evening</label>
+                        <input type="checkbox" id="excludeNight" value="nightNames">
+                        <label for="excludeNight">Night</label>
+                        <input type="checkbox" id="excludeAll" value="all">
+                        <label for="excludeAll">All Day</label>
+                    </div>
+                </div>
+                <button id="addExclusionBtn" class="secondary">Add Exclusion</button>
+                <div>
+                    <h4>Current Exclusions:</h4>
+                    <ul id="exclusionsList">
+                        <!-- Exclusions will be listed here -->
+                    </ul>
+                </div>
+            </div>
+
+            <div id="preferencesConfig" class="tabcontent">
+                <h3>Shift Preferences</h3>
+                <div class="form-row">
+                    <label for="preferencePerson">Person:</label>
+                    <select id="preferencePerson">
+                        <!-- Options will be generated by JavaScript -->
+                    </select>
+                </div>
+                <div class="form-row">
+                    <label>Preferred shifts:</label>
+                    <div>
+                        <input type="checkbox" id="preferMorning" value="morningNames">
+                        <label for="preferMorning">Morning</label>
+                        <input type="checkbox" id="preferEvening" value="eveningNames">
+                        <label for="preferEvening">Evening</label>
+                        <input type="checkbox" id="preferNight" value="nightNames">
+                        <label for="preferNight">Night</label>
+                    </div>
+                </div>
+                <button id="addPreferenceBtn" class="secondary">Set Preference</button>
+                <div>
+                    <h4>Current Preferences:</h4>
+                    <ul id="preferencesList">
+                        <!-- Preferences will be listed here -->
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Display list of names -->
+            <h3>Sambat"z:</h3>
+            <ul id="nameList">
+                <!-- List items will be generated by JavaScript -->
+            </ul>
+
+            <!-- Display exclusions -->
+            <h3>Restrictions:</h3>
+            <ul id="exclusionList">
+                <!-- Exclusion items will be generated by JavaScript -->
+            </ul>
+
+            <h3>Requests:</h3>
+            <ul id="requestsList">
+                <!-- Exclusion items will be generated by JavaScript -->
+            </ul>
+        </div>
+
+        <div class="stats-panel">
+            <h3>Statistics:</h3>
+            <ul id="closedOffShiftList">
+                <!-- Exclusion items will be generated by JavaScript -->
+            </ul>
+            <span>Desired Shifts:</span>
+            <ul id="desireShifts">
+                <!-- Exclusion items will be generated by JavaScript -->
+            </ul>
+            <span>Undesired Shifts:</span>
+            <ul id="undesiredShifts">
+                <!-- Exclusion items will be generated by JavaScript -->
+            </ul>
+            Consecutive Days Off:
+            <ul id="consecutiveList">
+                <!-- Exclusion items will be generated by JavaScript -->
+            </ul>
+            Shift Closed to Days Off:
+            <ul id="closeToDayOffList">
+                <!-- Exclusion items will be generated by JavaScript -->
+            </ul>
+        </div>
+    </div>
+    
+    <div id="statusMessage" class="status-message">Settings saved</div>
+
+    <script>
+        // EMPTY DEFAULT VALUES - will be filled from localStorage if available
+        let nextDays = 7;
+        let startingDate = new Date();
+        let names = [];
+        let exclusions = {};
+        let desiredShifts = {};
+        let namesInShift = {
+            morningNames: 2,
+            eveningNames: 2,
+            nightNames: 1,
+        };
+
+        // Variables for tracking iterations and solutions
+        let iterationCount = 0;
+        let globalShiftCount = {};
+        let globalDayOffCount = {};
+        let globalEndCloseCount = {};
+        let globalDayInterruptCount = {};
+        let iterationIndex = 0;
+        const maxIterations = 10000000;
+        const keepSolutions = 15;
+        let solutions = [];
+        let intervalHandler;
+        let stopFlag = true;
+
+        // LocalStorage Functions
+        function saveToLocalStorage() {
+            const settings = {
+                nextDays,
+                startingDate: startingDate.toISOString(),
+                names,
+                exclusions,
+                desiredShifts,
+                namesInShift
+            };
+            
+            localStorage.setItem('scheduleAppSettings', JSON.stringify(settings));
+            showStatusMessage();
+        }
+
+        function showStatusMessage() {
+            const statusMessage = document.getElementById('statusMessage');
+            statusMessage.classList.add('show');
+            
+            setTimeout(() => {
+                statusMessage.classList.remove('show');
+            }, 1500);
+        }
+
+        function loadFromLocalStorage() {
+            const savedSettings = localStorage.getItem('scheduleAppSettings');
+            if (savedSettings) {
+                try {
+                    const settings = JSON.parse(savedSettings);
+                    nextDays = settings.nextDays || 7;
+                    startingDate = new Date(settings.startingDate) || new Date();
+                    names = settings.names || [];
+                    exclusions = settings.exclusions || {};
+                    desiredShifts = settings.desiredShifts || {};
+                    namesInShift = settings.namesInShift || {
+                        morningNames: 2,
+                        eveningNames: 2,
+                        nightNames: 1,
+                    };
+                    
+                    // Update UI with loaded settings
+                    updateSettingsUI();
+                } catch (e) {
+                    console.error("Error loading settings from localStorage:", e);
+                }
+            }
+        }
+
+        function updateSettingsUI() {
+            // Update general settings
+            document.getElementById('startDateInput').valueAsDate = startingDate;
+            document.getElementById('daysToSchedule').value = nextDays;
+            
+            // Update team members list
+            renderTeamMembers();
+            
+            // Update shift counts
+            updateShiftCountsUI();
+            
+            // Update exclusions list
+            renderExclusions();
+            
+            // Update preferences list
+            renderPreferences();
+            
+            // Update dropdowns
+            updatePersonDropdowns();
+        }
+
+        function renderTeamMembers() {
+            const teamList = document.getElementById('teamMembersList');
+            teamList.innerHTML = '';
+            
+            names.forEach((name, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `${name} <button class="remove-btn" data-index="${index}">Remove</button>`;
+                teamList.appendChild(li);
+            });
+            
+            // Add event listeners to remove buttons
+            document.querySelectorAll('.remove-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    removePerson(index);
+                });
+            });
+        }
+
+        function updateShiftCountsUI() {
+            // Set default values for shift counts
+            document.getElementById('morningShiftCount').value = 
+                typeof namesInShift.morningNames === "number" ? 
+                namesInShift.morningNames : 
+                Object.values(namesInShift.morningNames)[0] || 2;
+                
+            document.getElementById('eveningShiftCount').value = 
+                typeof namesInShift.eveningNames === "number" ? 
+                namesInShift.eveningNames : 
+                Object.values(namesInShift.eveningNames)[0] || 2;
+                
+            document.getElementById('nightShiftCount').value = 
+                typeof namesInShift.nightNames === "number" ? 
+                namesInShift.nightNames : 
+                Object.values(namesInShift.nightNames)[0] || 1;
+                
+            // Render date exceptions for each shift type
+            renderShiftDateExceptions('morningNames', document.getElementById('morningShiftDateExceptions'));
+            renderShiftDateExceptions('eveningNames', document.getElementById('eveningShiftDateExceptions'));
+            renderShiftDateExceptions('nightNames', document.getElementById('nightShiftDateExceptions'));
+        }
+
+        function renderShiftDateExceptions(shiftType, container) {
+            container.innerHTML = '';
+            
+            if (typeof namesInShift[shiftType] === "object") {
+                Object.entries(namesInShift[shiftType]).forEach(([date, count]) => {
+                    // Skip the first entry which is the default value
+                    if (date === Object.keys(namesInShift[shiftType])[0]) return;
+                    
+                    const dateEntry = document.createElement('div');
+                    dateEntry.className = 'shift-date-entry';
+                    dateEntry.innerHTML = `
+                        <span>From ${date}: ${count} people</span>
+                        <button class="remove-date-btn" data-shift="${shiftType}" data-date="${date}">Remove</button>
+                    `;
+                    container.appendChild(dateEntry);
+                });
+            }
+            
+            // Add event listeners to remove buttons
+            container.querySelectorAll('.remove-date-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const shift = this.getAttribute('data-shift');
+                    const date = this.getAttribute('data-date');
+                    removeShiftDateException(shift, date);
+                });
+            });
+        }
+
+        function renderExclusions() {
+            const exclusionsList = document.getElementById('exclusionsList');
+            exclusionsList.innerHTML = '';
+            
+            for (const [name, dates] of Object.entries(exclusions)) {
+                for (const [date, shifts] of Object.entries(dates)) {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <strong>${name}</strong>: ${date} - 
+                        ${shifts.length === 0 ? 'All Day' : shifts.map(s => s.replace('Names', '')).join(', ')}
+                        <button class="remove-exclusion-btn" data-name="${name}" data-date="${date}">Remove</button>
+                    `;
+                    exclusionsList.appendChild(li);
+                }
+            }
+            
+            // Add event listeners to remove buttons
+            document.querySelectorAll('.remove-exclusion-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const name = this.getAttribute('data-name');
+                    const date = this.getAttribute('data-date');
+                    removeExclusion(name, date);
+                });
+            });
+        }
+
+        function renderPreferences() {
+            const preferencesList = document.getElementById('preferencesList');
+            preferencesList.innerHTML = '';
+            
+            for (const [name, shifts] of Object.entries(desiredShifts)) {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <strong>${name}</strong>: ${shifts.map(s => s.replace('Names', '')).join(', ')}
+                    <button class="remove-preference-btn" data-name="${name}">Remove</button>
+                `;
+                preferencesList.appendChild(li);
+            }
+            
+            // Add event listeners to remove buttons
+            document.querySelectorAll('.remove-preference-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const name = this.getAttribute('data-name');
+                    removePreference(name);
+                });
+            });
+        }
+
+        function updatePersonDropdowns() {
+            // Update the person dropdowns for exclusions and preferences
+            const exclusionPersonDropdown = document.getElementById('exclusionPerson');
+            const preferencePersonDropdown = document.getElementById('preferencePerson');
+            
+            // Clear existing options
+            exclusionPersonDropdown.innerHTML = '';
+            preferencePersonDropdown.innerHTML = '';
+            
+            // Add options for each person
+            names.forEach(name => {
+                const exclusionOption = document.createElement('option');
+                exclusionOption.value = name;
+                exclusionOption.textContent = name;
+                exclusionPersonDropdown.appendChild(exclusionOption);
+                
+                const preferenceOption = document.createElement('option');
+                preferenceOption.value = name;
+                preferenceOption.textContent = name;
+                preferencePersonDropdown.appendChild(preferenceOption);
+            });
+        }
+
+        // Event handlers for UI interactions
+        function addPerson() {
+            const nameInput = document.getElementById('newPersonName');
+            const name = nameInput.value.trim();
+            
+            if (name && !names.includes(name)) {
+                names.push(name);
+                nameInput.value = '';
+                renderTeamMembers();
+                updatePersonDropdowns();
+                clearErrorMessage(); // Clear any error messages
+                saveToLocalStorage(); // Auto-save
+            } else if (names.includes(name)) {
+                alert("This person is already in the team!");
+            }
+        }
+
+        function removePerson(index) {
+            // Check if this person has exclusions or preferences
+            const name = names[index];
+            
+            // Remove person from arrays and objects
+            names.splice(index, 1);
+            if (exclusions[name]) delete exclusions[name];
+            if (desiredShifts[name]) delete desiredShifts[name];
+            
+            // Update UI
+            renderTeamMembers();
+            renderExclusions();
+            renderPreferences();
+            updatePersonDropdowns();
+            saveToLocalStorage(); // Auto-save
+        }
+
+        function updateShiftCounts() {
+            // Get values from inputs
+            const morningCount = parseInt(document.getElementById('morningShiftCount').value);
+            const eveningCount = parseInt(document.getElementById('eveningShiftCount').value);
+            const nightCount = parseInt(document.getElementById('nightShiftCount').value);
+            
+            // Update shift counts
+            if (typeof namesInShift.morningNames === 'number') {
+                namesInShift.morningNames = morningCount;
+            } else {
+                namesInShift.morningNames[Object.keys(namesInShift.morningNames)[0]] = morningCount;
+            }
+            
+            if (typeof namesInShift.eveningNames === 'number') {
+                namesInShift.eveningNames = eveningCount;
+            } else {
+                namesInShift.eveningNames[Object.keys(namesInShift.eveningNames)[0]] = eveningCount;
+            }
+            
+            if (typeof namesInShift.nightNames === 'number') {
+                namesInShift.nightNames = nightCount;
+            } else {
+                namesInShift.nightNames = nightCount;
+            }
+            
+            saveToLocalStorage(); // Auto-save
+        }
+
+        function addShiftDateException(shiftType) {
+            // Prompt user for date and count
+            const dateStr = prompt("Enter date (DD/MM/YYYY):");
+            if (!dateStr) return;
+            
+            const count = parseInt(prompt("Enter number of people for this shift:"));
+            if (isNaN(count) || count < 1) return;
+            
+            // Ensure the shift type is an object
+            if (typeof namesInShift[shiftType] === 'number') {
+                const defaultCount = namesInShift[shiftType];
+                const currentDate = new Date();
+                const defaultDateStr = `${String(currentDate.getDate()).padStart(2, '0')}/${String(currentDate.getMonth() + 1).padStart(2, '0')}/${currentDate.getFullYear()}`;
+                
+                namesInShift[shiftType] = {
+                    [defaultDateStr]: defaultCount
+                };
+            }
+            
+            // Add the date exception
+            namesInShift[shiftType][dateStr] = count;
+            
+            // Update UI
+            updateShiftCountsUI();
+            saveToLocalStorage(); // Auto-save
+        }
+
+        function removeShiftDateException(shiftType, date) {
+            if (typeof namesInShift[shiftType] === 'object' && namesInShift[shiftType][date]) {
+                delete namesInShift[shiftType][date];
+                
+                // If only one entry left, convert back to number
+                const entries = Object.entries(namesInShift[shiftType]);
+                if (entries.length === 1) {
+                    namesInShift[shiftType] = entries[0][1];
+                }
+                
+                // Update UI
+                updateShiftCountsUI();
+                saveToLocalStorage(); // Auto-save
+            }
+        }
+
+        function addExclusion() {
+            const name = document.getElementById('exclusionPerson').value;
+            const date = document.getElementById('exclusionDate').value;
+            
+            if (!name) {
+                alert("Please add team members first!");
+                return;
+            }
+            
+            if (!date) {
+                alert("Please select a date!");
+                return;
+            }
+            
+            // Convert date to DD/MM/YYYY format
+            const dateObj = new Date(date);
+            const formattedDate = formatDate(dateObj);
+            
+            // Get selected shifts to exclude
+            const excludedShifts = [];
+            if (document.getElementById('excludeAll').checked) {
+                excludedShifts.length = 0; // Empty array means all day
+            } else {
+                if (document.getElementById('excludeMorning').checked) excludedShifts.push('morningNames');
+                if (document.getElementById('excludeEvening').checked) excludedShifts.push('eveningNames');
+                if (document.getElementById('excludeNight').checked) excludedShifts.push('nightNames');
+            }
+            
+            // Check if at least one shift is selected when "All Day" is not checked
+            if (!document.getElementById('excludeAll').checked && excludedShifts.length === 0) {
+                alert("Please select at least one shift to exclude or check 'All Day'.");
+                return;
+            }
+            
+            // Create exclusion entry
+            if (!exclusions[name]) {
+                exclusions[name] = {};
+            }
+            
+            exclusions[name][formattedDate] = excludedShifts;
+            
+            // Reset form and update UI
+            document.getElementById('exclusionDate').value = '';
+            document.getElementById('excludeMorning').checked = false;
+            document.getElementById('excludeEvening').checked = false;
+            document.getElementById('excludeNight').checked = false;
+            document.getElementById('excludeAll').checked = false;
+            
+            renderExclusions();
+            saveToLocalStorage(); // Auto-save
+        }
+
+        function removeExclusion(name, date) {
+            if (exclusions[name] && exclusions[name][date] !== undefined) {
+                delete exclusions[name][date];
+                
+                // If no more dates for this person, remove the entry
+                if (Object.keys(exclusions[name]).length === 0) {
+                    delete exclusions[name];
+                }
+                
+                renderExclusions();
+                saveToLocalStorage(); // Auto-save
+            }
+        }
+
+        function addPreference() {
+            const name = document.getElementById('preferencePerson').value;
+            
+            if (!name) {
+                alert("Please add team members first!");
+                return;
+            }
+            
+            // Get selected preferred shifts
+            const preferredShifts = [];
+            if (document.getElementById('preferMorning').checked) preferredShifts.push('morningNames');
+            if (document.getElementById('preferEvening').checked) preferredShifts.push('eveningNames');
+            if (document.getElementById('preferNight').checked) preferredShifts.push('nightNames');
+            
+            if (preferredShifts.length === 0) {
+                alert("Please select at least one preferred shift.");
+                return;
+            }
+            
+            // Save preferences
+            desiredShifts[name] = preferredShifts;
+            
+            // Reset form and update UI
+            document.getElementById('preferMorning').checked = false;
+            document.getElementById('preferEvening').checked = false;
+            document.getElementById('preferNight').checked = false;
+            
+            renderPreferences();
+            saveToLocalStorage(); // Auto-save
+        }
+
+        function removePreference(name) {
+            if (desiredShifts[name]) {
+                delete desiredShifts[name];
+                renderPreferences();
+                saveToLocalStorage(); // Auto-save
+            }
+        }
+
+        function updateGeneralSettings() {
+            const dateInput = document.getElementById('startDateInput');
+            const daysInput = document.getElementById('daysToSchedule');
+            
+            if (dateInput.value) {
+                startingDate = new Date(dateInput.value);
+            }
+            
+            if (daysInput.value) {
+                nextDays = parseInt(daysInput.value);
+            }
+            
+            saveToLocalStorage(); // Auto-save
+        }
+
+        // UI Helpers
+        function openConfigTab(evt, tabName) {
+            // Hide all tab content
+            document.querySelectorAll('.tabcontent').forEach(tab => {
+                tab.style.display = 'none';
+            });
+
+            // Remove active class from all tab buttons
+            document.querySelectorAll('.tablinks').forEach(btn => {
+                btn.className = btn.className.replace(' active', '');
+            });
+
+            // Show the selected tab and mark its button as active
+            document.getElementById(tabName).style.display = 'block';
+            evt.currentTarget.className += ' active';
+        }
+
+        function formatDate(date) {
+            const day = String(date.getDate()).padStart(2, '0'); // Get day and pad with zero if needed
+            const month = String(date.getMonth() + 1).padStart(2, '0'); // Get month (0-based) and pad
+            const year = date.getFullYear(); // Get full year
+            return `${day}/${month}/${year}`; // Format as DD/MM/YYYY
+        }
+
+        // Display and clear error messages
+        function showErrorMessage(message) {
+            const errorContainer = document.getElementById('errorContainer');
+            errorContainer.textContent = message;
+            errorContainer.style.display = 'block';
+        }
+
+        function clearErrorMessage() {
+            const errorContainer = document.getElementById('errorContainer');
+            errorContainer.textContent = '';
+            errorContainer.style.display = 'none';
+        }
+
+        // Core scheduling functions (from original code)
+        function getRandomName(exclude = []) {
+            const filteredNames = names.filter(name => !exclude.includes(name));
+            if (filteredNames.length === 0) return "No available staff";
+            return filteredNames[Math.floor(Math.random() * filteredNames.length)];
+        }
+
+        function getUpcomingDates(numDays) {
+            const dates = [];
+
+            for (let i = 0; i < numDays; i++) {
+                const nextDate = new Date();
+                nextDate.setDate(startingDate.getDate() + i); // Set the date to upcoming day
+                dates.push(nextDate); // Push the date as a string in the format "MM/DD/YYYY"
+            }
+
+            return dates;
+        }
+
+        function getShiftAmount(shiftDate, shiftNamesObject) {
+            if (typeof shiftNamesObject === "number") {
+                return shiftNamesObject;
+            }
+
+            let finalAmount = shiftNamesObject[Object.keys(shiftNamesObject)[0]];
+
+            for (const [formatDate, amount] of Object.entries(shiftNamesObject)) {
+                const dateParts = formatDate.split('/');
+                const date = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
+                if (shiftDate.getTime() >= date.getTime()) {
+                    finalAmount = amount;
+                }
+            }
+
+            return finalAmount;
+        }
+
+        function getExcludedNames(date, shift) {
+            const formattedDate = formatDate(new Date(date));
+            return Object.keys(exclusions)
+                .filter((name) => {
+                    const exclusion = exclusions?.[name]?.[formattedDate];
+                    if (!exclusion) {
+                        return false;
+                    }
+                    if (exclusion.length === 0) {
+                        return true;
+                    }
+                    return exclusion.includes(shift);
+                });
+        }
+
+        function fillTable() {
+            // Before filling the table, update settings from UI inputs
+            updateGeneralSettings();
+            updateShiftCounts();
+
+            // Check if we have team members
+            if (names.length === 0) {
+                showErrorMessage("Please add team members before running the schedule generator.");
+                return false;
+            }
+
+            clearErrorMessage();
+            
+            const upcomingDates = getUpcomingDates(nextDays); // Get next days
+
+            const shiftCount = {};
+            const offCount = {};
+            const endCloseCount = {};
+            const dayInterruptCount = {};
+
+            const solution = [];
+            const solutionsData = [];
+            let previousNight = [];
+
+            upcomingDates.forEach(date => {
+                const dayWorkCount = {};
+                const solutionDayData = {};
+
+                // Create a cell for the date
+                const dateCell = document.createElement('td');
+                dateCell.textContent = formatDate(date);
+
+                // Assign names for morning shift
+                const morningNames = [];
+                for (let i = 0; i < getShiftAmount(date, namesInShift.morningNames); i++) {
+                    const name = getRandomName([...morningNames, ...previousNight, ...getExcludedNames(date, 'morningNames')]);
+                    morningNames.push(name);
+                    shiftCount[name] = (shiftCount[name] || 0) + 1; // Increment shift count for the name
+                    dayWorkCount[name] = true;
+                }
+                solutionDayData.morningNames = morningNames;
+
+                // Assign names for evening shift
+                const eveningNames = [];
+                for (let i = 0; i < getShiftAmount(date, namesInShift.eveningNames); i++) {
+                    const name = getRandomName([...eveningNames, ...morningNames, ...getExcludedNames(date, 'eveningNames')]);
+                    eveningNames.push(name);
+                    shiftCount[name] = (shiftCount[name] || 0) + 1; // Increment shift count for the name
+                    dayWorkCount[name] = true;
+                }
+                solutionDayData.eveningNames = eveningNames;
+
+                // Assign names for night shift
+                const nightNames = [];
+                for (let i = 0; i < getShiftAmount(date, namesInShift.nightNames); i++) {
+                    const name = getRandomName([...(!namesInShift.eveningNames.length ? morningNames : []), ...eveningNames, ...nightNames, ...getExcludedNames(date, 'nightNames')]);
+                    nightNames.push(name);
+                    shiftCount[name] = (shiftCount[name] || 0) + 1; // Increment shift count for the name
+                    dayWorkCount[name] = true;
+                }
+                solutionDayData.nightNames = nightNames;
+                previousNight = nightNames;
+
+                // Create cells for the shifts
+                const morningCell = document.createElement('td');
+                morningCell.textContent = morningNames.join(', '); // Join the names for display
+
+                const eveningCell = document.createElement('td');
+                eveningCell.textContent = eveningNames.join(', '); // Join the names for display
+
+                const nightCell = document.createElement('td');
+                nightCell.textContent = nightNames.join(', '); // Join the names for display
+
+                const offNames = [];
+                for (const name of names) {
+                    if (!dayWorkCount[name]) {
+                        offCount[name] = (offCount[name] || 0) + 1; // Increment shift count for the name
+                        offNames.push(name);
+                    }
+                }
+
+                const offCell = document.createElement('td');
+                offCell.textContent = offNames.join(', ')
+                solutionsData.push(solutionDayData)
+                solution.push({
+                    dateCell,
+                    morningCell,
+                    eveningCell,
+                    nightCell,
+                    offCell
+                });
+            });
+
+            iterationCount++;
+            const iterationCounter = document.querySelector('#iterationCounter');
+            iterationCounter.textContent = iterationCount.toLocaleString();
+
+            const score = calcSolutionScore(solutionsData, shiftCount, offCount) || 100000;
+
+            if (solutions.length && score > Math.min(...solutions.map(s => s.score))) {
+                return true;
+            }
+
+            globalShiftCount = shiftCount;
+            globalDayOffCount = offCount;
+            renderSolution(solution);
+            const solutionScore = document.querySelector('#solutionScore');
+            solutionScore.textContent = score.toLocaleString();
+
+            const daysAmount = document.querySelector('#daysAmount');
+            daysAmount.textContent = ` ${nextDays.toString()} (Starting ${formatDate(startingDate)}) `;
+
+            renderStatistics(solutionsData);
+            solutions.push({
+                solutionsData,
+                solution,
+                score,
+            });
+
+            // Sort solutions by score in ascending order
+            solutions = solutions
+                .sort((a, b) => a.score - b.score) // Sort by score
+                .slice(0, keepSolutions); // Get the first solutions
+                
+            return true;
+        }
+
+        function countUndesiredShifts(shifts) {
+            // Create a results object to store counts for each person
+            const result = {};
+
+            // Initialize counts for each name in the desiredShifts
+            for (const name in desiredShifts) {
+                result[name] = 0;
+            }
+
+            // All possible shift types
+            const allShiftTypes = ['morningNames', 'eveningNames', 'nightNames'];
+
+            // Iterate through the shifts and check for each undesired shift
+            shifts.forEach(shift => {
+                for (const name in desiredShifts) {
+                    const desiredShiftTypes = desiredShifts[name];
+
+                    // Find the shift types that are not in the desiredShiftTypes
+                    const undesiredShiftTypes = allShiftTypes.filter(shiftType => !desiredShiftTypes.includes(shiftType));
+
+                    // Count how many times the person is in an undesired shift
+                    undesiredShiftTypes.forEach(shiftType => {
+                        if (shift[shiftType].includes(name)) {
+                            result[name]++;
+                        }
+                    });
+                }
+            });
+
+            return result;
+        }
+
+        function countDesiredShifts(shifts) {
+            // Create a results object to store counts for each person
+            const result = {};
+
+            // Initialize counts for each name in the desiredShifts
+            for (const name of names) {
+                result[name] = 0;
+            }
+
+            // Iterate through the shifts and check for each desired shift
+            shifts.forEach(shift => {
+                for (const name in desiredShifts) {
+                    const desiredShiftTypes = desiredShifts[name];
+
+                    desiredShiftTypes.forEach(shiftType => {
+                        if (shift[shiftType].includes(name)) {
+                            result[name]++;
+                        }
+                    });
+                }
+            });
+
+            return result;
+        }
+
+        function analyzeShiftsWithScore(shifts) {
+            // Create sets to store the names of everyone in the shifts
+            const allNames = new Set();
+            shifts.forEach(shift => {
+                shift.morningNames.forEach(name => allNames.add(name));
+                shift.eveningNames.forEach(name => allNames.add(name));
+                shift.nightNames.forEach(name => allNames.add(name));
+            });
+
+            // Create objects to store results
+            const consecutiveDaysOff = {};
+
+            allNames.forEach(name => {
+                consecutiveDaysOff[name] = 0;
+            });
+
+            // Function to calculate the consecutive days off with score
+            allNames.forEach(name => {
+                let daysOff = 0;
+
+                shifts.forEach((day, index) => {
+                    const hasShiftToday = day.morningNames.includes(name) || day.eveningNames.includes(name) || day.nightNames.includes(name);
+
+                    // Count consecutive days off with increasing score
+                    if (!hasShiftToday) {
+                        daysOff++;
+                    } else {
+                        if (daysOff > 0) {
+                            consecutiveDaysOff[name] += Math.pow(2, daysOff); // Apply the score based on consecutive days off
+                            daysOff = 0; // Reset the counter
+                        }
+                    }
+                });
+
+                // Check if they had days off at the end of the array
+                if (daysOff > 0) {
+                    consecutiveDaysOff[name] += Math.pow(2, daysOff); // Apply the score for the last set of days off
+                }
+            });
+
+            return {
+                consecutiveDaysOff
+            };
+        }
+
+        function calculateMaxDaysOff(shifts) {
+            // Create sets to store the names of everyone in the shifts
+            const allNames = new Set();
+            shifts.forEach(shift => {
+                shift.morningNames.forEach(name => allNames.add(name));
+                shift.eveningNames.forEach(name => allNames.add(name));
+                shift.nightNames.forEach(name => allNames.add(name));
+            });
+
+            // Create objects to store results
+            const maxConsecutiveDaysOff = {};
+
+            // Initialize max consecutive days off for each name
+            allNames.forEach(name => {
+                maxConsecutiveDaysOff[name] = 0;
+            });
+
+            // Iterate over all names to calculate max consecutive days off
+            allNames.forEach(name => {
+                let currentStreak = 0;
+                let maxStreak = 0;
+
+                // Loop through each shift day
+                shifts.forEach(shift => {
+                    const hasShiftToday = shift.morningNames.includes(name) || shift.eveningNames.includes(name) || shift.nightNames.includes(name);
+
+                    // If the person doesn't have a shift, increase the streak
+                    if (!hasShiftToday) {
+                        currentStreak++;
+                    } else {
+                        // If they do have a shift, update the max streak and reset the current streak
+                        if (currentStreak > maxStreak) {
+                            maxStreak = currentStreak;
+                        }
+                        currentStreak = 0;
+                    }
+                });
+
+                // Handle the case where the last streak continues until the end of the shifts array
+                if (currentStreak > maxStreak) {
+                    maxStreak = currentStreak;
+                }
+
+                // Store the max streak in the result object
+                maxConsecutiveDaysOff[name] = maxStreak;
+            });
+
+            return maxConsecutiveDaysOff;
+        }
+
+        function analyzeShifts(shifts) {
+            // Create sets to store the names of everyone in the shifts
+            const allNames = new Set();
+            shifts.forEach(shift => {
+                shift.morningNames.forEach(name => allNames.add(name));
+                shift.eveningNames.forEach(name => allNames.add(name));
+                shift.nightNames.forEach(name => allNames.add(name));
+            });
+
+            // Create objects to store results
+            const consecutiveDaysOff = {};
+            const afterDayOffMorning = {};
+            const beforeDayOffEvening = {};
+            const beforeDayOffNight = {};
+
+            allNames.forEach(name => {
+                consecutiveDaysOff[name] = 0;
+                afterDayOffMorning[name] = 0;
+                beforeDayOffEvening[name] = 0;
+                beforeDayOffNight[name] = 0;
+            });
+
+            // Function to calculate the consecutive days off and day off patterns
+            allNames.forEach(name => {
+                let daysOff = 0;
+
+                shifts.forEach((day, index) => {
+                    const hasShiftToday = day.morningNames.includes(name) || day.eveningNames.includes(name) || day.nightNames.includes(name);
+
+                    // Count consecutive days off
+                    if (!hasShiftToday) {
+                        daysOff++;
+                    } else {
+                        if (daysOff > 0) {
+                            consecutiveDaysOff[name] += daysOff;
+                            daysOff = 0; // Reset the counter
+                        }
+                    }
+
+                    // Count morning shift after day off
+                    if (index > 0) {
+                        const previousDay = shifts[index - 1];
+                        const hadDayOffYesterday = !previousDay.morningNames.includes(name) && !previousDay.eveningNames.includes(name) && !previousDay.nightNames.includes(name);
+                        if (hadDayOffYesterday && day.morningNames.includes(name)) {
+                            afterDayOffMorning[name]++;
+                        }
+                    }
+
+                    // Count evening and night shifts before a day off
+                    if (index < shifts.length - 1) {
+                        const nextDay = shifts[index + 1];
+                        const hasDayOffTomorrow = !nextDay.morningNames.includes(name) && !nextDay.eveningNames.includes(name) && !nextDay.nightNames.includes(name);
+
+                        if (day.eveningNames.includes(name) && hasDayOffTomorrow) {
+                            beforeDayOffEvening[name]++;
+                        }
+
+                        if (day.nightNames.includes(name) && hasDayOffTomorrow) {
+                            beforeDayOffNight[name]++;
+                        }
+                    }
+                });
+
+                // Check if they had days off at the end of the array
+                if (daysOff > 0) {
+                    consecutiveDaysOff[name] += daysOff;
+                }
+            });
+
+            return {
+                consecutiveDaysOff,
+                afterDayOffMorning,
+                beforeDayOffEvening,
+                beforeDayOffNight
+            };
+        }
+
+        function calcSolutionScore(solutionsData, shiftCounts, offCounts) {
+            const daysOffAnalyzeCount = analyzeShifts(solutionsData);
+            const desiredShifts = countUndesiredShifts(solutionsData);
+            const analyzeShiftsWithScoreRes = calculateMaxDaysOff(solutionsData);
+
+            return (calculateShiftScore(shiftCounts) * 70)
+                + (calculateShiftScore(offCounts) * 50)
+                + (calculateShiftScore(analyzeShiftsWithScoreRes) * 50)
+                + (calculateShiftScore(desiredShifts) / 15)
+                + (calculateShiftScore(daysOffAnalyzeCount.afterDayOffMorning) / 10)
+                + (calculateShiftScore(daysOffAnalyzeCount.beforeDayOffEvening) / 10)
+                + (calculateShiftScore(daysOffAnalyzeCount.beforeDayOffNight) * 10);
+        }
+
+        function calculateShiftScore(shiftCounts) {
+            // Step 1: Determine the ideal shift count (mean in this case)
+            const shiftValues = Object.values(shiftCounts);
+
+            if (shiftValues.length < names.length) {
+                return 1000;
+            }
+
+            if (shiftValues.some(c => c === 0)) {
+                return 1000;
+            }
+            
+            if (shiftValues.length === 0) {
+                return 0; // Return 0 if there are no shifts (empty data)
+            }
+            
+            const idealCount = shiftValues.reduce((acc, count) => acc + count, 0) / shiftValues.length;
+
+            // Step 2: Calculate the differences
+            const differences = {};
+            for (const name in shiftCounts) {
+                differences[name] = Math.abs(shiftCounts[name] - idealCount);
+            }
+
+            // Step 3: Compute the score
+            const score = Object.values(differences).reduce((acc, diff) => acc + diff, 0);
+
+            return score;
+        }
+
+        function renderSolution(solution) {
+            const tableBody = document.querySelector('#scheduleTable tbody');
+            tableBody.innerHTML = ''; // Clear the previous table rows
+
+            for (const {
+                dateCell,
+                morningCell,
+                eveningCell,
+                nightCell,
+                offCell
+            } of solution) {
+                // Create a table row
+                const row = document.createElement('tr');
+
+                // Append the cells to the row
+                row.appendChild(dateCell);
+                row.appendChild(morningCell);
+                row.appendChild(eveningCell);
+                row.appendChild(nightCell);
+                row.appendChild(offCell);
+
+                // Append the row to the table body
+                tableBody.appendChild(row);
+            }
+        }
+
+        function renderStatistics(solution) {
+            const calcDesiredShifts = countDesiredShifts(solution);
+            const calcNotDesiredShifts = countUndesiredShifts(solution);
+            const daysOffAnalyzeCount = analyzeShifts(solution);
+            const maxDaysOff = calculateMaxDaysOff(solution);
+
+            const desireElement = document.getElementById('desireShifts');
+            desireElement.innerHTML = ''; // Clear the list before adding new items
+
+            for (const [name, shifts] of Object.entries(calcDesiredShifts)) {
+                if (!(name in desiredShifts)) {
+                    continue;
+                }
+                const li = document.createElement('li');
+                li.textContent = `${name}: ${shifts}`; // Display name and shift count
+                desireElement.appendChild(li);
+            }
+
+            const undesiredShiftsElement = document.getElementById('undesiredShifts');
+            undesiredShiftsElement.innerHTML = ''; // Clear the list before adding new items
+
+            for (const [name, shifts] of Object.entries(calcNotDesiredShifts)) {
+                if (!(name in desiredShifts)) {
+                    continue;
+                }
+                const li = document.createElement('li');
+                li.textContent = `${name}: ${shifts}`; // Display name and shift count
+                undesiredShiftsElement.appendChild(li);
+            }
+
+            const consecutiveListElement = document.getElementById('consecutiveList');
+            consecutiveListElement.innerHTML = ''; // Clear the list before adding new items
+
+            for (const [name, shifts] of Object.entries(maxDaysOff)) {
+                const li = document.createElement('li');
+                li.textContent = `${name}: ${shifts}`; // Display name and shift count
+                consecutiveListElement.appendChild(li);
+            }
+
+            const closeToDayOffListElement = document.getElementById('closeToDayOffList');
+            closeToDayOffListElement.innerHTML = ''; // Clear the list before adding new items
+
+            for (const name of names) {
+                const li = document.createElement('li');
+                const amount = daysOffAnalyzeCount.afterDayOffMorning[name] + daysOffAnalyzeCount.beforeDayOffEvening[name] + daysOffAnalyzeCount.beforeDayOffEvening[name];
+                li.textContent = `${name}: ${amount || 0}`; // Display name and shift count
+                closeToDayOffListElement.appendChild(li);
+            }
+        }
+
+        function displayNames() {
+            const nameList = document.getElementById('nameList');
+            nameList.innerHTML = ''; // Clear the list before adding new items
+
+            names.forEach(name => {
+                const li = document.createElement('li');
+                li.textContent = `${name}: ${globalShiftCount[name] || 0} shifts ${globalDayOffCount[name] || 0} off days`; // Display name and shift count
+                nameList.appendChild(li);
+            });
+        }
+
+        function displayExclusions() {
+            const exclusionList = document.getElementById('exclusionList');
+            exclusionList.innerHTML = ''; // Clear the list before adding new items
+
+            for (const name in exclusions) {
+                const li = document.createElement('li');
+
+                let final = '';
+                for (const [date, excludes] of Object.entries(exclusions[name])) {
+                    final += `<br> ${date} ${excludes.map(ex => ex.split('Names')[0]).join(', ')}`
+                }
+
+                li.innerHTML = `<b>${name}:</b> ${final}`; // Display name and their excluded dates
+                exclusionList.appendChild(li);
+            }
+        }
+
+        function displayDesiredShifts() {
+            const requestsList = document.getElementById('requestsList');
+            requestsList.innerHTML = ''; // Clear the list before adding new items
+
+            for (const name in desiredShifts) {
+                const li = document.createElement('li');
+                li.textContent = `${name}: ${desiredShifts[name].map(s => s.split('Names')[0]).join(', ')}`; // Display name and their excluded dates
+                requestsList.appendChild(li);
+            }
+        }
+
+        function mutation() {
+            iterationIndex++;
+
+            if (iterationIndex > maxIterations || stopFlag) {
+                clearInterval(intervalHandler);
+                intervalHandler = undefined;
+                return;
+            }
+
+            const result = recalculate();
+            if (!result) {
+                stopMutations();
+            }
+        }
+
+        function runGens() {
+            // Reset solutions array when starting a new run
+            solutions = [];
+            
+            // Check if we have team members before starting
+            if (names.length === 0) {
+                showErrorMessage("Please add team members before running the schedule generator.");
+                return;
+            }
+            
+            clearErrorMessage();
+            iterationIndex = 0;
+            stopFlag = false;
+            intervalHandler = setInterval(mutation, 10);
+        }
+
+        function stopMutations() {
+            stopFlag = true;
+            if (intervalHandler) {
+                clearInterval(intervalHandler);
+            }
+        }
+
+        function recalculate() {
+            const result = fillTable(); // Refill the table with new random assignments
+            
+            if (result) {
+                displayNames(); // Update the names list
+                displayExclusions(); // Update the exclusions list
+                displayDesiredShifts(); // Update desired shifts list
+            }
+            
+            return result;
+        }
+
+        // Event handlers for the UI components
+        document.getElementById('recalculateButton').addEventListener('click', runGens);
+        document.getElementById('stopButton').addEventListener('click', stopMutations);
+        document.getElementById('addPersonBtn').addEventListener('click', addPerson);
+        document.getElementById('addExclusionBtn').addEventListener('click', addExclusion);
+        document.getElementById('addPreferenceBtn').addEventListener('click', addPreference);
+        document.getElementById('addMorningDateBtn').addEventListener('click', () => addShiftDateException('morningNames'));
+        document.getElementById('addEveningDateBtn').addEventListener('click', () => addShiftDateException('eveningNames'));
+        document.getElementById('addNightDateBtn').addEventListener('click', () => addShiftDateException('nightNames'));
+        
+        // Handle "All Day" checkbox to manage other checkboxes
+        document.getElementById('excludeAll').addEventListener('change', function() {
+            const morningCheck = document.getElementById('excludeMorning');
+            const eveningCheck = document.getElementById('excludeEvening');
+            const nightCheck = document.getElementById('excludeNight');
+            
+            if (this.checked) {
+                morningCheck.checked = false;
+                eveningCheck.checked = false;
+                nightCheck.checked = false;
+                morningCheck.disabled = true;
+                eveningCheck.disabled = true;
+                nightCheck.disabled = true;
+            } else {
+                morningCheck.disabled = false;
+                eveningCheck.disabled = false;
+                nightCheck.disabled = false;
+            }
+        });
+
+        // Adding an Enter key handler for the name input
+        document.getElementById('newPersonName').addEventListener('keyup', function(event) {
+            if (event.key === 'Enter') {
+                addPerson();
+            }
+        });
+
+        // Initialize the app
+        window.onload = function () {
+            // Set today's date as the default starting date
+            const today = new Date();
+            document.getElementById('startDateInput').valueAsDate = today;
+            
+            loadFromLocalStorage();
+            clearErrorMessage();
+            
+            if (names.length > 0) {
+                fillTable();
+                displayNames();
+                displayExclusions();
+                displayDesiredShifts();
+            }
+            
+            // Show the first tab by default
+            document.getElementById('generalConfig').style.display = 'block';
+        };
+    </script>
+</body>
+
+</html>
